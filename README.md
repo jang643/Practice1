@@ -71,13 +71,18 @@ public ResponseEntity<?> transfer(@RequestBody @Valid WithdrawReqDto req ) throw
 ### 3. Redis 기반 전역 락 처리
 
 ```java
+@Retryable(retryFor = {LockTimeoutException.class, PessimisticLockingFailureException.class},
+           backoff = @Backoff(delay = 100, multiplier = 2))
+@Transactional
 public void transferWithGlobalLock(WithdrawReqDto req) throws AuthException, InterruptedException {
     RLock lock = redisson.getLock("account:" + req.getFromAccountId());
+    boolean locked = false;
     try {
-        if (!lock.tryLock(3, 10, TimeUnit.SECONDS)) throw new LockTimeoutException();
+        locked = lock.tryLock(3, 10, TimeUnit.SECONDS);
+        if (!locked) throw new LockTimeoutException();
         accountService.withdrawAndDeposit(req);
     } finally {
-        if (lock.isHeldByCurrentThread()) lock.unlock();
+        if (locked && lock.isHeldByCurrentThread()) lock.unlock();
     }
 }
 ```
@@ -85,8 +90,6 @@ public void transferWithGlobalLock(WithdrawReqDto req) throws AuthException, Int
 ### 4. 낙관적 락 기반 송금 처리
 
 ```java
-@Retryable(retryFor = {PessimisticLockingFailureException.class, LockTimeoutException.class},
-           backoff = @Backoff(delay = 100, multiplier = 2))
 @Transactional
 public void withdrawAndDeposit(WithdrawReqDto req) throws AuthException {
     AccountEntity from = accountJpaRepository.findByIdOptimistic(req.getFromAccountId())
@@ -168,5 +171,3 @@ protected void doFilterInternal(HttpServletRequest req, HttpServletResponse res,
 - MySQL 8.x
 - Redis (Redisson)
 - Gradle
-
----
