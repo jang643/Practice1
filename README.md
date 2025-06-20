@@ -133,7 +133,7 @@ public void unlock(Long accountId) {
 }
 ```
 
-### 6. 낙관적 락 쿼리 설정
+### 6. 비관적 락 쿼리 설정
 
 ```java
 @Lock(LockModeType.PESSIMISTIC_WRITE)
