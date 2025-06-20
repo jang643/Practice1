@@ -1,42 +1,60 @@
-.gradle
-build/
-!gradle/wrapper/gradle-wrapper.jar
-!**/src/main/**/build/
-!**/src/test/**/build/
-
-### IntelliJ IDEA ###
-.idea/modules.xml
-.idea/jarRepositories.xml
-.idea/compiler.xml
-.idea/libraries/
-*.iws
-*.iml
-*.ipr
-out/
-!**/src/main/**/out/
-!**/src/test/**/out/
-
-### Eclipse ###
-.apt_generated
-.classpath
-.factorypath
-.project
-.settings
-.springBeans
-.sts4-cache
-bin/
-!**/src/main/**/bin/
-!**/src/test/**/bin/
-
-### NetBeans ###
-/nbproject/private/
+# 빌드 결과물 무시
+/build/
+/out/
+/target/
+/bin/
 /nbbuild/
 /dist/
 /nbdist/
 /.nb-gradle/
 
-### VS Code ###
+# IDE 설정 파일 무시
+.idea/
+/*.iml
+*.ipr
+*.iws
+*.class
+
+# OS/툴 자동 생성 파일 무시
+.DS_Store
+*.log
+
+# Eclipse
+.project
+.classpath
+.settings/
+.factorypath
+.springBeans
+.sts4-cache
+.apt_generated
+
+# IntelliJ
+.idea/
+*.iml
+*.ipr
+*.iws
+.idea_modules/
+.idea/**/workspace.xml
+.idea/**/tasks.xml
+.idea/**/usage.statistics.xml
+
+# VSCode
 .vscode/
 
-### Mac OS ###
-.DS_Store
+# 테스트/메인 소스 내부 빌드 출력 무시
+!**/src/main/**/build/
+!**/src/test/**/build/
+!**/src/main/**/out/
+!**/src/test/**/out/
+!**/src/main/**/bin/
+!**/src/test/**/bin/
+
+# gradle 관련 캐시
+.gradle/
+!gradle/wrapper/gradle-wrapper.jar
+
+# 로컬 DB 파일 (필요 시)
+*.h2.db
+
+application.properties
+application.yml
