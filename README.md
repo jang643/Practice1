@@ -47,7 +47,6 @@
 ```http
 POST /transfer
 Headers:
-- X-Use-GlobalLock: true or false
 - X-Idempotency-Key: UUID
 
 Body:
