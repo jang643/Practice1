@@ -71,8 +71,10 @@ public ResponseEntity<?> transfer(@RequestBody @Valid WithdrawReqDto req ) throw
 ### 3. Redis 기반 전역 락 처리
 
 ```java
-@Retryable(retryFor = {LockTimeoutException.class, PessimisticLockingFailureException.class},
-           backoff = @Backoff(delay = 100, multiplier = 2))
+@Retryable(
+            retryFor = {LockTimeoutException.class, OptimisticLockException.class, ObjectOptimisticLockingFailureException.class},
+            backoff = @Backoff(delay = 100, multiplier = 2)
+    )
 @Transactional
 public void transferWithGlobalLock(WithdrawReqDto req) throws AuthException, InterruptedException {
     RLock lock = redisson.getLock("account:" + req.getFromAccountId());
