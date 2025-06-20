@@ -12,7 +12,7 @@
 | 송금 처리 | 송금자 계좌 출금 및 수신자 계좌 입금 처리 |
 | 예외 처리 | 계좌 없음, 잔액 부족, 비밀번호 오류 등 세분화된 예외 정의 |
 | 트랜잭션 처리 | Spring `@Transactional` 을 통한 출금-입금 원자성 보장 |
-| 낙관적 락 처리 | `@Lock(LockModeType.OPTIMISTIC)` 기반 계좌 동시성 제어 |
+| 비관적 락 처리 | `@Lock(LockModeType.PESSIMISTIC)` 기반 계좌 동시성 제어 |
 | Redis 분산 락 처리 | Redisson을 활용한 분산 환경 대응 |
 
 ## 🏗️ 프로젝트 구조
@@ -72,35 +72,35 @@ public ResponseEntity<?> transfer(@RequestBody @Valid WithdrawReqDto req ) throw
 
 ```java
 @Retryable(
-            retryFor = {LockTimeoutException.class, OptimisticLockException.class, ObjectOptimisticLockingFailureException.class},
+            retryFor = {LockTimeoutException.class, PessimisticLockingFailureException.class},
             backoff = @Backoff(delay = 100, multiplier = 2)
     )
 @Transactional
 public void transferWithGlobalLock(WithdrawReqDto req) throws AuthException, InterruptedException {
-    RLock lock = redisson.getLock("account:" + req.getFromAccountId());
-    boolean locked = false;
-    try {
-        locked = lock.tryLock(3, 10, TimeUnit.SECONDS);
-        if (!locked) throw new LockTimeoutException();
-        accountService.withdrawAndDeposit(req);
-    } finally {
-        if (locked && lock.isHeldByCurrentThread()) lock.unlock();
-    }
+  RLock lock = redisson.getLock("account:" + req.getFromAccountId());
+  boolean locked = false;
+  try {
+    locked = lock.tryLock(3, 10, TimeUnit.SECONDS);
+    if (!locked) throw new LockTimeoutException();
+    accountService.withdrawAndDeposit(req);
+  } finally {
+    if (locked && lock.isHeldByCurrentThread()) lock.unlock();
+  }
 }
 ```
 
-### 4. 낙관적 락 기반 송금 처리
+### 4. 비관적 락 기반 송금 처리
 
 ```java
 @Transactional
 public void withdrawAndDeposit(WithdrawReqDto req) throws AuthException {
-    AccountEntity from = accountJpaRepository.findByIdOptimistic(req.getFromAccountId())
-        .orElseThrow(() -> new AccountNotFoundException(req.getFromAccountId()));
-    verifyPassword(req.getFromAccountId(), req.getRawPassword());
-    AccountEntity to = accountJpaRepository.findByIdOptimistic(req.getToAccountId())
-        .orElseThrow(() -> new AccountNotFoundException(req.getToAccountId()));
-    from.withdraw(req.getAmount());
-    to.deposit(req.getAmount());
+  AccountEntity from = accountJpaRepository.findByIdForUpdate(req.getFromAccountId())
+      .orElseThrow(() -> new AccountNotFoundException(req.getFromAccountId()));
+  verifyPassword(req.getFromAccountId(), req.getRawPassword());
+  AccountEntity to = accountJpaRepository.findByIdForUpdate(req.getToAccountId())
+      .orElseThrow(() -> new AccountNotFoundException(req.getToAccountId()));
+  from.withdraw(req.getAmount());
+  to.deposit(req.getAmount());
 }
 ```
 
@@ -136,9 +136,9 @@ public void unlock(Long accountId) {
 ### 6. 낙관적 락 쿼리 설정
 
 ```java
-@Lock(LockModeType.OPTIMISTIC)
-@Query("select a from AccountEntity a where a.accountId = :id")
-Optional<AccountEntity> findByIdOptimistic(Long id);
+@Lock(LockModeType.PESSIMISTIC_WRITE)
+@Query("select a from AccountEntity a where a.accountId = :accountId")
+Optional<AccountEntity> findByIdForUpdate(Long accountId);
 ```
 
 ### 7. 멱등성 필터 적용 (Idempotency)
