@@ -59,18 +59,13 @@ Body:
 }
 ```
 
-### 2. 전송 분기 처리 (Global Lock 사용 여부에 따라)
+### 2. 전송 처리
 
 ```java
 @PostMapping("/transfer")
-public ResponseEntity<?> transfer(@RequestBody @Valid WithdrawReqDto req,
-                                  @RequestHeader(value = "X-Use-GlobalLock", defaultValue = "false") boolean useGlobal) throws InterruptedException {
-    if(useGlobal) {
-        lockFacade.transferWithGlobalLock(req);
-    } else {
-        accountService.withdrawAndDeposit(req);
-    }
-    return ResponseEntity.noContent().build();
+public ResponseEntity<?> transfer(@RequestBody @Valid WithdrawReqDto req ) throws InterruptedException {
+  lockFacade.transferWithGlobalLock(req);
+  return ResponseEntity.noContent().build();
 }
 ```
 
