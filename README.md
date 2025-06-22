@@ -1,8 +1,8 @@
 # 은행 송금 트랜잭션 구현 프로젝트 1
 
 ## 📌 프로젝트 소개
-실제 은행 시스템을 모사한 송금 로직을 Spring Boot 기반 구현. 
-실행 과정은 계좌 인증 → 출금/입금 처리 → 트랜잭션 관리 → 동시성 제어
+은행 송금 로직 Spring Boot 기반 구현. 
+계좌 인증 → 출금/입금 처리 → 트랜잭션 관리 → 동시성 제어
 
 ## 🧩 주요 기능
 
@@ -96,7 +96,7 @@ public void transferWithGlobalLock(WithdrawReqDto req) throws AuthException, Int
 public void withdrawAndDeposit(WithdrawReqDto req) throws AuthException {
   AccountEntity from = accountJpaRepository.findByIdForUpdate(req.getFromAccountId())
       .orElseThrow(() -> new AccountNotFoundException(req.getFromAccountId()));
-  verifyPassword(req.getFromAccountId(), req.getRawPassword());
+  accountAuthService.verifyPassword(req.getFromAccountId(), req.getRawPassword());
   AccountEntity to = accountJpaRepository.findByIdForUpdate(req.getToAccountId())
       .orElseThrow(() -> new AccountNotFoundException(req.getToAccountId()));
   from.withdraw(req.getAmount());
@@ -109,27 +109,20 @@ public void withdrawAndDeposit(WithdrawReqDto req) throws AuthException {
 ```java
 @Transactional(noRollbackFor = AuthException.class)
 public void verifyPassword(Long accountId, String rawPassword) {
-    AccountAuthEntity auth = accountAuthJpaRepository.findById(accountId)
-        .orElseThrow(() -> new AccountNotFoundException(accountId));
+  AccountAuthEntity auth = accountAuthJpaRepository.findById(accountId)
+      .orElseThrow(() -> new AccountNotFoundException(accountId));
 
-    if (!encoder.matches(rawPassword, auth.getPassword())) {
-        auth.increaseFail();
-        throw new AuthException(auth.getFailCount());
-    } else {
-        unlock(accountId);
-    }
-}
+  if (!encoder.matches(rawPassword, auth.getPassword())) {
+    auth.increaseFail();
+    throw new AuthException(auth.getFailCount());
+  }
 
-@Transactional
-public void unlock(Long accountId) {
-    AccountAuthEntity auth = accountAuthJpaRepository.findById(accountId)
-        .orElseThrow(() -> new AccountNotFoundException(accountId));
-    LocalDateTime lockUntil = auth.getLockUntil();
-    if (auth.getStatus().equals("LOCKED") && lockUntil.isAfter(LocalDateTime.now())) {
-        throw new AccountNotAvailableException();
-    } else {
-        auth.unlock();
-    }
+  LocalDateTime lockUntil = auth.getLockUntil();
+  if (auth.getStatus().equals("LOCKED") && lockUntil != null && lockUntil.isAfter(LocalDateTime.now())) {
+    throw new AccountNotAvailableException();
+  } else {
+    auth.unlock();
+  }
 }
 ```
 
