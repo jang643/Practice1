@@ -4,6 +4,7 @@ import com.practice1.backend.account.dto.request.WithdrawReqDto;
 import com.practice1.backend.account.dto.response.AccountResDto;
 import com.practice1.backend.account.service.AccountService;
 import com.practice1.backend.account.service.lock.GlobalAccountLockFacade;
+import com.practice1.backend.common.idempotency.annotation.Idempotent;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -28,14 +29,10 @@ public class AccountController {
         return ResponseEntity.ok(accountService.getBalance(account_id));
     }
 
+    @Idempotent
     @PostMapping("/transfer")
-    public ResponseEntity<?> transfer(@RequestBody @Valid WithdrawReqDto req,
-                                      @RequestHeader(value = "X-Use-GlobalLock", defaultValue = "false") boolean useGlobal) throws InterruptedException {
-        if(useGlobal) {
-            lockFacade.transferWithGlobalLock(req);
-        } else {
-            accountService.withdrawAndDeposit(req);
-        }
+    public ResponseEntity<?> transfer(@RequestBody @Valid WithdrawReqDto req ) throws InterruptedException {
+        lockFacade.transferWithGlobalLock(req);
         return ResponseEntity.noContent().build();
     }
 
