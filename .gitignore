@@ -1,8 +1,0 @@
-/build/
-/out/
-/.gradle/
-/.idea/
-*.iml
-*.log
-*.class
-application.properties
