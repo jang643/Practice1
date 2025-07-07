@@ -1,7 +1,11 @@
 package com.practice1.backend.account.exception;
 
-public class AccountNotAvailableException extends RuntimeException{
-    public AccountNotAvailableException() {
-        super("this account is not available");
-    }
+import com.practice1.backend.common.exception.PracticeException;
+
+public class AccountNotAvailableException extends PracticeException {
+    private static final String MESSAGE = "Account not available";
+    public AccountNotAvailableException() { super(MESSAGE);  }
+
+    @Override
+    public int getStatusCode() { return 404;}
 }

@@ -1,4 +1,4 @@
-package com.practice1.backend.web.filter;
+/*package com.practice1.backend.web.filter;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.redis.core.RedisTemplate;
@@ -22,7 +22,7 @@ public class IdempotencyFilter extends OncePerRequestFilter {
                                     HttpServletResponse res,
                                     FilterChain chain) throws IOException, ServletException {
         if ("POST".equals(req.getMethod()) && req.getRequestURI().equals("/transfer")) {
-            String key = req.getHeader("X-Idempotency-Key");
+            String key = req.getHeader("Idempotency-Key");
             if (key == null) {
                 res.sendError(400, "Missing idempotency key");
                 return;
@@ -37,4 +37,4 @@ public class IdempotencyFilter extends OncePerRequestFilter {
         chain.doFilter(req, res);
     }
 }
-
+*/
